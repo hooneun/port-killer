@@ -36,11 +36,15 @@ func main() {
 
 		fields := strings.Fields(line)
 		if len(fields) >= 9 {
+			address := fields[len(fields)-1]
+			if address == "(LISTEN)" && len(fields) > 1 {
+				address = fields[len(fields)-2]
+			}
 			proc := Process{
 				Command: fields[0],
 				PID:     fields[1],
 				User:    fields[2],
-				Address: fields[len(fields)-1],
+				Address: address,
 			}
 			processes = append(processes, proc)
 		}
