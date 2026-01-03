@@ -36,13 +36,26 @@ func main() {
 
 		fields := strings.Fields(line)
 		if len(fields) >= 9 {
+			pid := fields[1]
 			address := fields[len(fields)-1]
 			if address == "(LISTEN)" && len(fields) > 1 {
 				address = fields[len(fields)-2]
 			}
+
+			// Get full command using ps
+			cmdArgs := exec.Command("ps", "-p", pid, "-o", "command=")
+			fullCmdOutput, err := cmdArgs.Output()
+			command := fields[0]
+			if err == nil {
+				fullCmd := strings.TrimSpace(string(fullCmdOutput))
+				if fullCmd != "" {
+					command = fullCmd
+				}
+			}
+
 			proc := Process{
-				Command: fields[0],
-				PID:     fields[1],
+				Command: command,
+				PID:     pid,
 				User:    fields[2],
 				Address: address,
 			}
@@ -63,7 +76,11 @@ func main() {
 	_, _ = fmt.Fprintln(w, "--\t-------\t---\t----\t-------")
 
 	for i, p := range processes {
-		_, _ = fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", i+1, p.Command, p.PID, p.User, p.Address)
+		cmdDisplay := p.Command
+		if len(cmdDisplay) > 60 {
+			cmdDisplay = cmdDisplay[:30] + "..." + cmdDisplay[len(cmdDisplay)-27:]
+		}
+		_, _ = fmt.Fprintf(w, "%d\t%s\t%s\t%s\t%s\n", i+1, cmdDisplay, p.PID, p.User, p.Address)
 	}
 	_ = w.Flush()
 
